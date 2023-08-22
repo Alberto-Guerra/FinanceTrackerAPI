@@ -11,7 +11,7 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddDbContext<DataContext>(options => options.UseNpgsql(ConnectionHelper.GetConnectionString(builder.Configuration)));
+builder.Services.AddDbContext<DataContext>();
 builder.Services.AddCors(options => options.AddPolicy(name: "TransactionOrigins",
     policy =>
     {
