@@ -15,7 +15,7 @@ builder.Services.AddDbContext<DataContext>();
 builder.Services.AddCors(options => options.AddPolicy(name: "TransactionOrigins",
     policy =>
     {
-        policy.WithOrigins("financetracker.up.railway.app").AllowAnyHeader().AllowAnyMethod();
+        policy.WithOrigins("https://finance-tracker-app-ui.vercel.app/").AllowAnyHeader().AllowAnyMethod();
     }
     ));
 
