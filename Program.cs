@@ -12,7 +12,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<DataContext>();
-builder.services.AddCors(o => o.AddPolicy("AllowAnyOrigin",
+builder.Services.AddCors(o => o.AddPolicy("AllowAnyOrigin",
                       builder =>
                       {
                           builder.AllowAnyOrigin()
