@@ -12,12 +12,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<DataContext>();
-builder.Services.AddCors(options => options.AddPolicy(name: "TransactionOrigins",
-    policy =>
-    {
-        policy.WithOrigins("http://localhost:4200").AllowAnyHeader().AllowAnyMethod();
-    }
-    ));
+builder.Services.AddCors();
 
 
 var app = builder.Build();
