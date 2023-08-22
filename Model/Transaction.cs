@@ -1,15 +1,20 @@
 ﻿using FinanceTrackerAPI.Controllers;
 using FinanceTrackerAPI.Data;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FinanceTrackerAPI.Model
 {
     public class Transaction
     {
         public int Id { get; set; }
+
+        [Column(TypeName = "VARCHAR")]
         public string Name { get; set; }
         public double Amount { get; set; }
         public DateTime Date { get; set; }
         public List<Category> Categories { get; set; }
+        [Column(TypeName = "VARCHAR")]
         public string Description { get; set; }
 
         public Transaction(TransactionDTO transaction)
