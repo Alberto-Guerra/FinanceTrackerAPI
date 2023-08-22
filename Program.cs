@@ -12,13 +12,13 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<DataContext>();
-builder.Services.AddCors(options => options.AddPolicy(name: "TransactionOrigins",
-    policy =>
-    {
-        policy.WithOrigins("https://finance-tracker-app-ui.vercel.app/").AllowAnyHeader().AllowAnyMethod();
-        policy.AllowCredentials();
-    }
-    ));
+builder.services.AddCors(o => o.AddPolicy("AllowAnyOrigin",
+                      builder =>
+                      {
+                          builder.AllowAnyOrigin()
+                                 .AllowAnyMethod()
+                                 .AllowAnyHeader();
+                      }));
 
 
 
@@ -34,7 +34,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors("TransactionOrigins");
+app.UseCors("AllowAnyOrigin");
 
 app.UseHttpsRedirection();
 
