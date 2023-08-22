@@ -16,6 +16,7 @@ builder.Services.AddCors(options => options.AddPolicy(name: "TransactionOrigins"
     policy =>
     {
         policy.WithOrigins("https://finance-tracker-app-ui.vercel.app/").AllowAnyHeader().AllowAnyMethod();
+        policy.AllowCredentials();
     }
     ));
 
