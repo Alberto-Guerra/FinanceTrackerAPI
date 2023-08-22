@@ -12,7 +12,14 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<DataContext>();
-builder.Services.AddCors();
+builder.Services.AddCors(options => options.AddPolicy(name: "TransactionOrigins",
+    policy =>
+    {
+        policy.WithOrigins("financetracker.up.railway.app").AllowAnyHeader().AllowAnyMethod();
+    }
+    ));
+
+
 
 
 var app = builder.Build();
