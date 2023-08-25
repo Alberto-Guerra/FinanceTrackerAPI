@@ -41,7 +41,7 @@ namespace FinanceTrackerAPI.Controllers
         public async Task<ActionResult<List<CategoryDTO>>> PostCategory(CategoryNoTransactionDTO category)
         {
 
-            var dbCategory = new Category(category.Name, category.Description);
+            var dbCategory = new Category(category.Name, category.Description, category.Color, category.Budget);
 
             _context.categories.Add(dbCategory);
             await _context.SaveChangesAsync();
@@ -61,6 +61,8 @@ namespace FinanceTrackerAPI.Controllers
 
             dbCategory.Name = category.Name;
             dbCategory.Description = category.Description;
+            dbCategory.Color = category.Color;
+            dbCategory.Budget = category.Budget;
 
             await _context.SaveChangesAsync();
 
