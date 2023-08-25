@@ -33,6 +33,8 @@ namespace FinanceTrackerAPI.Controllers
             dto.Name = category.Name;
             dto.Description = category.Description;
             dto.Transactions = new List<TransactionNoCategoriesDTO>();
+            dto.Color = category.Color;
+            dto.Budget = category.Budget;
             foreach(Transaction transaction in category.Transactions)
             {
                 dto.Transactions.Add(ToTransactionNoCategoriesDto(transaction));
