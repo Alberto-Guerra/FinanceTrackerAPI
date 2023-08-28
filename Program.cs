@@ -1,5 +1,6 @@
 using FinanceTrackerAPI.Data;
 using FinanceTrackerAPI.Helper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
@@ -19,6 +20,7 @@ builder.Services.AddCors(o => o.AddPolicy("AllowAnyOrigin",
                                  .AllowAnyMethod()
                                  .AllowAnyHeader();
                       }));
+
 
 
 

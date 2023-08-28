@@ -8,8 +8,9 @@ namespace FinanceTrackerAPI.Data
 {
     public class DataContext : DbContext   
     {
-        public DbSet<Transaction> transactions => Set<Transaction>();
-        public DbSet<Category> categories => Set<Category>();
+        public DbSet<Transaction> Transactions => Set<Transaction>();
+        public DbSet<Category> Categories => Set<Category>();
+        public DbSet<User> Users => Set<User>();
 
         protected readonly IConfiguration Configuration;
 

@@ -4,6 +4,11 @@ using FinanceTrackerAPI.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Xml.Linq;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
+using System.Text;
+using FinanceTrackerAPI.Helper;
 
 namespace FinanceTrackerAPI.Controllers
 {
@@ -12,26 +17,48 @@ namespace FinanceTrackerAPI.Controllers
     public class TransactionsController : ControllerBase
     {
         private readonly DataContext _context;
+        private readonly IConfiguration _configuration;
 
 
         //create constructor
-        public TransactionsController(DataContext context)
+        public TransactionsController(DataContext context, IConfiguration configuration)
 
         {
             _context = context;
+            _configuration = configuration;
         }
 
         [HttpGet]
         public async Task<ActionResult<List<TransactionDTO>>> GetTransactions()
         {
-            return Ok(await _context.transactions.Include(t => t.Categories).ToListAsync());
+            var id = checkToken();
+
+            if(id == null)
+            {
+                return Unauthorized();
+            }
+
+            return Ok(await PrivateGetTransactions(id));
         }
 
+        private async Task<List<Transaction>> PrivateGetTransactions(string id)
+        {
+            return await _context.Transactions.Include(t => t.Categories).Where(t => t.UserId == int.Parse(id)).ToListAsync();
+        }
+
+        
 
         [HttpGet("{categoryID}")]
         public async Task<ActionResult<List<TransactionDTO>>> GetTransactionsByCategory(int categoryID)
         {
-            var dbCategory = await _context.categories.FindAsync(categoryID);
+            var id = checkToken();
+
+            if (id == null)
+            {
+                return Unauthorized();
+            }
+
+            var dbCategory = await _context.Categories.FindAsync(categoryID);
 
             if (dbCategory == null)
             {
@@ -39,29 +66,38 @@ namespace FinanceTrackerAPI.Controllers
             }
      
 
-            return Ok(await _context.transactions.Where(t => t.Categories.Contains(dbCategory)).ToListAsync());
+            return Ok(await _context.Transactions.Where(t => t.Categories.Contains(dbCategory)).Where(t => t.UserId == int.Parse(id)).ToListAsync());
         }
 
 
         [HttpPost]
         public async Task<ActionResult<List<TransactionDTO>>> CreateTransaction(TransactionDTO transaction)
         {
-            var dbTransaction = dtoToTransaction(transaction);
+            var id = checkToken();
 
+            if(id == null)
+            {
+                return Unauthorized();
+            }
 
-            _context.transactions.Add(dbTransaction);
+            var dbTransaction = dtoToTransaction(transaction, id);
+
+            _context.Transactions.Add(dbTransaction);
             await _context.SaveChangesAsync();
 
-            return Ok(await _context.transactions.Include(t => t.Categories).ToListAsync());
+            return Ok(await PrivateGetTransactions(id));
         }
 
-        private Transaction dtoToTransaction(TransactionDTO transaction)
+        private Transaction dtoToTransaction(TransactionDTO transaction, string userID)
         {
+            
             var dbTransaction = new Transaction(transaction);
+
+            dbTransaction.UserId = int.Parse(userID);
 
             foreach (var category in transaction.Categories)
             {
-                var dbCategory = _context.categories.Find(category.Id);
+                var dbCategory = _context.Categories.Find(category.Id);
                 if(dbCategory != null)
                     dbTransaction.Categories.Add(dbCategory);
             }
@@ -72,7 +108,14 @@ namespace FinanceTrackerAPI.Controllers
         [HttpPut]
         public async Task<ActionResult<List<TransactionDTO>>> UpdateTransaction(TransactionDTO transaction)
         {
-            var dbTransaction = await _context.transactions.Include(t => t.Categories).FirstOrDefaultAsync(t => t.Id == transaction.Id);
+            var id = checkToken();
+
+            if (id == null)
+            {
+                return Unauthorized();
+            }
+
+            var dbTransaction = await _context.Transactions.Include(t => t.Categories).Where(t => t.UserId == int.Parse(id)).FirstOrDefaultAsync(t => t.Id == transaction.Id);
 
 
             if (dbTransaction == null)
@@ -99,7 +142,7 @@ namespace FinanceTrackerAPI.Controllers
 
             foreach (var category in transaction.Categories)
             {
-                var dbCategory = _context.categories.Find(category.Id);
+                var dbCategory = _context.Categories.Find(category.Id);
                 if (dbCategory != null) { 
                     dbTransaction.Categories.Add(dbCategory);
                     if(!dbCategory.Transactions.Contains(dbTransaction))
@@ -109,14 +152,22 @@ namespace FinanceTrackerAPI.Controllers
 
             await _context.SaveChangesAsync();
 
-            return Ok(await _context.transactions.Include(t => t.Categories).ToListAsync());
+            return Ok(await PrivateGetTransactions(id));
         }
 
         [HttpPut("addCategory/{transactionId}")]
         public async Task<ActionResult<List<TransactionDTO>>> AddCategoryToTransaction(int transactionId, CategoryNoTransactionDTO category)
         {
-        
-            var dbTransaction = await _context.transactions.Include(t => t.Categories).FirstOrDefaultAsync(t => t.Id == transactionId);
+
+            var id = checkToken();
+
+            if (id == null)
+            {
+                return Unauthorized();
+            }
+
+
+            var dbTransaction = await _context.Transactions.Include(t => t.Categories).Where(t => t.UserId == int.Parse(id)).FirstOrDefaultAsync(t => t.Id == transactionId);
 
             if (dbTransaction == null)
             {
@@ -124,7 +175,7 @@ namespace FinanceTrackerAPI.Controllers
             }
       
 
-            var dbCategory = await _context.categories.Include(c => c.Transactions).FirstOrDefaultAsync(c => c.Id == category.Id);
+            var dbCategory = await _context.Categories.Include(c => c.Transactions).Where(t => t.UserId == int.Parse(id)).FirstOrDefaultAsync(c => c.Id == category.Id);
 
             if (dbCategory == null)
             {
@@ -136,21 +187,28 @@ namespace FinanceTrackerAPI.Controllers
 
             await _context.SaveChangesAsync();
 
-            return Ok(await _context.transactions.Include(t => t.Categories).ToListAsync());
+            return Ok(await PrivateGetTransactions(id));
         }
 
 
         [HttpPut("removeCategory/{transactionId}")]
         public async Task<ActionResult<List<TransactionDTO>>> RemoveCategoryFromTransaction(int transactionId, CategoryNoTransactionDTO category)
         {
-            var dbTransaction = await _context.transactions.Include(t => t.Categories).FirstOrDefaultAsync(t => t.Id == transactionId);
+            var id = checkToken();
+
+            if (id == null)
+            {
+                return Unauthorized();
+            }
+
+            var dbTransaction = await _context.Transactions.Include(t => t.Categories).Where(t => t.UserId == int.Parse(id)).FirstOrDefaultAsync(t => t.Id == transactionId);
 
             if (dbTransaction == null)
             {
                 return BadRequest("Transaction not found");
             }
 
-            var dbCategory = await _context.categories.Include(c => c.Transactions).FirstOrDefaultAsync(c => c.Id == category.Id);
+            var dbCategory = await _context.Categories.Include(c => c.Transactions).Where(t => t.UserId == int.Parse(id)).FirstOrDefaultAsync(c => c.Id == category.Id);
 
             if (dbCategory == null)
             {
@@ -168,23 +226,63 @@ namespace FinanceTrackerAPI.Controllers
 
             await _context.SaveChangesAsync();
 
-            return Ok(await _context.transactions.Include(t => t.Categories).ToListAsync());
+            return Ok(await PrivateGetTransactions(id));
         }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult<List<TransactionDTO>>> DeleteTransaction(int id)
         {
-            var dbTransaction = await _context.transactions.FindAsync(id);
+            var userId = checkToken();
 
-            if(dbTransaction == null)
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+
+            var dbTransaction = await _context.Transactions.Where(t => t.UserId == int.Parse(userId)).FirstOrDefaultAsync(c => c.Id == id);
+
+            if (dbTransaction == null)
             {
                 return BadRequest("Transaction not found");
             }
 
-            _context.transactions.Remove(dbTransaction);
+            _context.Transactions.Remove(dbTransaction);
             await _context.SaveChangesAsync();
 
-            return Ok(await _context.transactions.Include(t => t.Categories).ToListAsync());
+            return Ok(await PrivateGetTransactions(userId));
+        }
+
+
+        private string checkToken()
+        {
+            string token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+
+            //Console.WriteLine(token);
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration.GetSection("AppSettings:Token").Value));
+            var validationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = key,
+                ValidateIssuer = false, // You might want to set these to your actual issuer details
+                ValidateAudience = false, // You might want to set these to your actual audience details
+                ClockSkew = TimeSpan.Zero // Adjust as needed
+            };
+            ClaimsPrincipal claimsPrincipal;
+            try
+            {
+                SecurityToken validatedToken;
+                claimsPrincipal = tokenHandler.ValidateToken(token, validationParameters, out validatedToken);
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+
+
+            // Now you can access the claims, including the NameIdentifier
+            return claimsPrincipal.FindFirst(ClaimTypes.NameIdentifier).Value;
         }
 
 
